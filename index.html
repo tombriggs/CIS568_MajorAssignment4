@@ -4,10 +4,7 @@
     <meta charset="UTF-8">
     <title>T. Briggs - Major Assignment 4</title>
 
-    <link rel="stylesheet" href="d3.slider.css"/>
-
     <script src="https://d3js.org/d3.v6.min.js"></script>
-    <script src="d3.slider.js"></script>
     <style>
         #time
         {
@@ -33,7 +30,14 @@
     <label for="thresholdSlider">Threshold</label>
     <input type="range" min="6" max="200" value="200" class="slider" id="thresholdSlider">
 </div>
-<div id="minMaxSlider"></div>
+<div id="minSliderDiv">
+    <label for="minSlider">Min</label>
+    <input type="range" min="0" max="100" value="0" class="slider" id="minSlider">
+</div>
+<div id="maxSliderDiv">
+    <label for="maxSlider">Max</label>
+    <input type="range" min="0" max="100" value="0" class="slider" id="maxSlider">
+</div>
 <svg width="80vw" viewbox="0 0 1024 1024"></svg>
 
 <script>
@@ -62,6 +66,8 @@
             let max_val = minAndMax[1]
 
             let threshold = d3.select("#thresholdSlider").node().value
+            let minSlider = d3.select("#minSlider").node().value
+            let maxSlider = d3.select("#maxSlider").node().value
 
             /////////////////COLOR CODING/////////////////////////////
             let colors = d3.scaleLinear()
@@ -78,7 +84,7 @@
             // Step 3 contour generator
             let contours = d3.contours()
             .size([m, n])
-                .thresholds(d3.range(min_val,max_val,threshold)) // threshold is 6 degrees
+                .thresholds(d3.range(minSlider,maxSlider,threshold)) // threshold is 6 degrees
                 (values_T);
 
             // Step 3 append contour to path (d)
@@ -95,15 +101,57 @@
                     function (d) {
                         return colors(d.value)
                     })
+
+
         })
     }
 
+    function sliderChange(d) {
+        let minSlider = d3.select("#minSlider").node().value
+        let maxSlider = d3.select("#maxSlider").node().value
+        if (+minSlider > +maxSlider)
+        {
+            d3.select("#minSlider").node().value = maxSlider
+        }
+        else if (+maxSlider < +minSlider)
+        {
+            d3.select("#maxSlider").node().value = minSlider
+        }
+        else
+        {
+            svg.selectAll('.contours').remove()
+            plot_contour(timeSeries)
+        }
+    }
 
+    function configureSliders(fileName)
+    {
+        d3.csv(fileName).then(function (data) {
+            let values_T= [];
+            data.forEach(function (d) {
+                values_T.push(+d[0])
+            });
+
+            let minAndMax = d3.extent(values_T)
+            let min_val = minAndMax[0]
+            let max_val = minAndMax[1]
+
+            d3.select("#minSlider")
+                .attr("min", min_val)
+                .attr("max", max_val)
+                .attr("value", min_val)
+            d3.select("#maxSlider")
+                .attr("min", min_val)
+                .attr("max", max_val)
+                .attr("value", max_val)
+        })
+        d3.select("#thresholdSlider").on("change",sliderChange)
+        d3.select("#minSlider").on("change",sliderChange)
+        d3.select("#maxSlider").on("change",sliderChange)
+    }
+
+    configureSliders(timeSeries)
     plot_contour(timeSeries)
-    d3.select("#thresholdSlider").on("change",function (d) {
-        svg.selectAll('.contours').remove()
-        plot_contour(timeSeries)
-    })
 
 
 </script>
