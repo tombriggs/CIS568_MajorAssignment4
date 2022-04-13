@@ -47,7 +47,7 @@
     // path generator
     const path = d3.geoPath();
 
-    function plot_contour(fileName)
+    function CT_Image_Generator(fileName)
     {
         // Step 1 read csv file
         d3.csv(fileName).then(function (data)
@@ -120,7 +120,7 @@
         else
         {
             svg.selectAll('.contours').remove()
-            plot_contour(timeSeries)
+            CT_Image_Generator(timeSeries)
         }
     }
 
@@ -151,7 +151,7 @@
     }
 
     configureSliders(timeSeries)
-    plot_contour(timeSeries)
+    CT_Image_Generator(timeSeries)
 
 
 </script>
