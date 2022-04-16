@@ -83,8 +83,7 @@
 
 
 
-    function main(data)
-    {
+    function main(data) {
         let income_data = {}
         data[1].columns.forEach(d => {
             let income = +(data[1][0][d])
@@ -92,68 +91,123 @@
                 income_data[d] = income
         })
 
-        var colorScale = d3.scaleSequential(d3.interpolateGreens)
-            .domain(d3.extent(Object.values(income_data)))
+        let incomeValues = Object.values(income_data)
+        let incomeExtent = d3.extent(incomeValues)
+        let colorScale = d3.scaleSequential(d3.interpolateGreens)
+            .domain(incomeExtent)
 
-        function mapGenerator(geoData_features,svg_id,title,scale=1200)
-        {
-        let width = 1000
-        let height= 1000
-        let svg = d3.select(svg_id)
-        svg.append("text")
-            .attr("x", width/2 -200)
-            .attr("y",height* .1 )
-            .attr("class","title")
-            .text(title)
-        let projection = d3.geoAlbersUsa()
-            .scale(scale).translate([width/2, 2*height/5])
-        let geo_generator = d3.geoPath().projection(projection);
-            let mapCanvas = svg.append('g').attr("class",'mapCanvas')
+        function mapGenerator(geoData_features, svg_id, title, scale = 1200) {
+            let width = 1000
+            let height = 1000
+            let svg = d3.select(svg_id)
+            svg.append("text")
+                .attr("x", width / 2 - 200)
+                .attr("y", height * .1)
+                .attr("class", "title")
+                .text(title)
+            let projection = d3.geoAlbersUsa()
+                .scale(scale).translate([width / 2, 2 * height / 5])
+            let geo_generator = d3.geoPath().projection(projection);
+            let mapCanvas = svg.append('g').attr("class", 'mapCanvas')
             mapCanvas.selectAll('path')
                 .data(geoData_features)
                 .enter()
                 .append('path')
-                .attr("class","path_geo")
-                .attr("d",geo_generator)
-                .attr("fill",function (d){
+                .attr("class", "path_geo")
+                .attr("d", geo_generator)
+                .attr("fill", function (d) {
                     if (d.properties.NAME in income_data)
                         return colorScale(income_data[d.properties.NAME])
-                    else
-                    {
+                    else {
                         console.log("No value for " + d.properties.NAME)
                         return "white"
                     }
                 })
-                .attr("class",function (d){
-                    return "cls"+d.properties.GEOID.toString();
+                .attr("class", function (d) {
+                    return "cls" + d.properties.GEOID.toString();
                 })
-                .on('mouseover',function (d){
-                    d3.selectAll("*").classed('hover',false);
-                    d3.selectAll(`.${d3.select(this).attr('class')}`).classed('hover',true);
+                .on('mouseover', function (d) {
+                    d3.selectAll("*").classed('hover', false);
+                    d3.selectAll(`.${d3.select(this).attr('class')}`).classed('hover', true);
                 })
-                .on("mousemove",function (mouseData,d){
+                .on("mousemove", function (mouseData, d) {
                     tooltip_html(d.properties.NAME)
                     d3.select('#tooltip')
-                        .style("opacity",.8)
-                        .style("left",(mouseData.clientX+10).toString()+"px")
-                        .style("top",(mouseData.clientY+10).toString()+"px")
+                        .style("opacity", .8)
+                        .style("left", (mouseData.clientX + 10).toString() + "px")
+                        .style("top", (mouseData.clientY + 10).toString() + "px")
                 })
-                .on("mouseout",function (mouseData,d){
-                    d3.select('#tooltip').style("opacity",0.0);
-                    d3.selectAll("*").classed('hover',false);
+                .on("mouseout", function (mouseData, d) {
+                    d3.select('#tooltip').style("opacity", 0.0);
+                    d3.selectAll("*").classed('hover', false);
 
                 })
             svg.call(d3.zoom()
-                .extent([[0,0],[1000,1000]])
-                .scaleExtent([1,12])
-                .on("zoom",zoomed)
+                .extent([[0, 0], [1000, 1000]])
+                .scaleExtent([1, 12])
+                .on("zoom", zoomed)
             )
-            function zoomed({transform}){
-                d3.selectAll(".mapCanvas").attr("transform",transform)
+
+            function zoomed({transform}) {
+                d3.selectAll(".mapCanvas").attr("transform", transform)
             }
         }
 
+        // Code for this function borrowed from
+        // https://bl.ocks.org/HarryStevens/6eb89487fc99ad016723b901cbd57fde
+        function drawLegend() {
+            let padding = 20;
+            let width = 320;
+            let innerWidth = width - (padding * 2);
+            let barHeight = 8;
+            let height = 28;
 
+            let xScale = d3.scaleSequential()
+                .range([0, innerWidth])
+                .domain(incomeExtent);
+
+            let sortedIncomeValues = incomeValues.sort((a,b) => a - b)
+            let aquarter = parseInt((incomeExtent[1] - incomeExtent[0])/4)
+
+            /*
+            // This seems like what we want but the bin function doesn't guarantee equal sized buckets
+            let fbin = d3.bin().thresholds(4)
+            let bins = fbin(sortedIncomeValues)
+            let xTicks = bins.map(d => d3.min(d))
+
+            // We could also do simply axisBottom().ticks(#) but that shows
+            // "nice" values, which in this case I don't want
+            */
+            let xTicks = [incomeExtent[0],
+                incomeExtent[0] + aquarter,
+                incomeExtent[0] + (2 * aquarter),
+                incomeExtent[0] + (3 * aquarter),
+                incomeExtent[1]]
+
+            let xAxis = d3.axisBottom(xScale)
+                .tickSize(barHeight * 2)
+                .tickValues(xTicks);
+
+            let svg = d3.select("body").append("svg").attr("width", width).attr("height", height);
+            let g = svg.append("g").attr("transform", "translate(" + padding + ", 0)");
+
+            let defs = svg.append("defs");
+            let linearGradient = defs.append("linearGradient").attr("id", "myGradient");
+            linearGradient.selectAll("stop")
+                .data(sortedIncomeValues)
+                .enter().append("stop")
+                .attr("offset", d => ((d - incomeExtent[0]) / (incomeExtent[1] - incomeExtent[0]) * 100) + "%")
+                .attr("stop-color", d => colorScale(d))
+
+            g.append("rect")
+                .attr("width", innerWidth)
+                .attr("height", barHeight)
+                .style("fill", "url(#myGradient)")
+
+            g.append("g")
+                .call(xAxis)
+                .select(".domain").remove();
+    }
 
         //let geoJson_choropleth = topojson.feature(data[1],data[1].objects.cb_2018_us_county_20m).features;
         let geoJson_choropleth = data[0].features
@@ -162,6 +216,8 @@
 
         mapGenerator(geoJson_choropleth,'#svg_choropleth',title='US Income Choropleth',scale=1200)
         mapGenerator(geoJson_cartogram,'#svg_cartogram',title='US Income Cartogram',scale=1300)
+
+        drawLegend()
 
    function tooltip_html(stateName){
     let margin={x:1,y:10}
