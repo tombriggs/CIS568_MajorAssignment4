@@ -87,7 +87,9 @@
     {
         let income_data = {}
         data[1].columns.forEach(d => {
-            income_data[d] = +(data[1][0][d])
+            let income = +(data[1][0][d])
+            if (income > 0)
+                income_data[d] = income
         })
 
         var colorScale = d3.scaleSequential(d3.interpolateGreens)
