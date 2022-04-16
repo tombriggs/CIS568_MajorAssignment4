@@ -15,7 +15,7 @@
             position: absolute;
             font-family: sans-serif;
             font-size: medium;
-            width: 150px;
+            width: 200px;
             height: 30px;
         }
 
@@ -68,19 +68,16 @@
     </svg>
 </div>
 <script>
-    let gop_color = "#FF0000"
-    let dem_color = "#0015BC"
-    let global
     // load the data sources:
     let stateIncomes = "data/stateIncome.csv"
-    //let geojson_cartogram = "data/US_Election_Cartogram.json?1";
+    let geojson_cartogram = "data/cartogram.geojson";
     let geojson_choropleth = "data/states.json";
 
     Promise.all(
         [
-            //d3.json(geojson_cartogram),
             d3.json(geojson_choropleth),
-            d3.csv(stateIncomes)
+            d3.csv(stateIncomes),
+            d3.json(geojson_cartogram)
         ]
             ,d3.autoType()).then(main)
 
@@ -154,15 +151,15 @@
             }
         }
 
-        //let geoJson_cartogram = data[0].features
 
 
         //let geoJson_choropleth = topojson.feature(data[1],data[1].objects.cb_2018_us_county_20m).features;
         let geoJson_choropleth = data[0].features
+        let geoJson_cartogram = data[2].features
 
 
         mapGenerator(geoJson_choropleth,'#svg_choropleth',title='US Income Choropleth',scale=1200)
-        //mapGenerator(geoJson_cartogram,'#svg_cartogram',title='US Income Cartogram',scale=1300)
+        mapGenerator(geoJson_cartogram,'#svg_cartogram',title='US Income Cartogram',scale=1300)
 
    function tooltip_html(stateName){
     let margin={x:1,y:10}
